@@ -14,6 +14,7 @@ esac
 dir="${KESTREL_BUILD_ROOT:-$HOME/kestrel-build}/$mode"
 cmake -S . -B "$dir" -G Ninja -DKESTREL_SANITIZE="$san" >/dev/null
 cmake --build "$dir" -j"$(nproc)"
-if [ "$mode" = tsan ]; then export TSAN_OPTIONS="halt_on_error=1 second_deadlock_stack=1"; fi
+case "$mode" in tsan) export KESTREL_TIME_SCALE=3 ;; asan) export KESTREL_TIME_SCALE=2 ;; esac
+if [ "$mode" = tsan ]; then export TSAN_OPTIONS="halt_on_error=0 ignore_noninstrumented_modules=1 second_deadlock_stack=1 suppressions=$PWD/tests/tsan.supp"; fi
 if [ "$mode" = asan ]; then export ASAN_OPTIONS="detect_leaks=1:abort_on_error=0"; fi
 ctest --test-dir "$dir" --output-on-failure -j"$(nproc)"

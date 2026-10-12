@@ -17,6 +17,9 @@ if(KESTREL_SANITIZE STREQUAL "address")
 elseif(KESTREL_SANITIZE STREQUAL "thread")
   add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
   add_link_options(-fsanitize=thread)
+  # TSan aborts with "unexpected memory mapping" on kernels with high ASLR entropy (WSL2 6.6).
+  # Run every test binary (discovery included) with ASLR disabled.
+  set(CMAKE_CROSSCOMPILING_EMULATOR setarch ${CMAKE_HOST_SYSTEM_PROCESSOR} -R)
 elseif(KESTREL_SANITIZE STREQUAL "undefined")
   add_compile_options(-fsanitize=undefined -fno-sanitize-recover=undefined)
   add_link_options(-fsanitize=undefined)

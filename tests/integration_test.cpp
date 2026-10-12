@@ -208,7 +208,7 @@ TEST(Integration, RunningJobSurvivesWorkerHeartbeatingNormally) {
   h.StartControl();
   h.AddWorker("w1");
   ASSERT_TRUE(h.WaitForWorkers(1));
-  JobId j = h.Sh("sleep 2.5");  // > 2x dead_after (1 s)
+  JobId j = h.Sh("sleep " + ScaledSeconds(2.5));  // > 2x dead_after
   ASSERT_TRUE(h.WaitState(j, JobState::SUCCEEDED, std::chrono::seconds(20)));
   EXPECT_EQ(h.Get(j).attempts, 1);
   EXPECT_EQ(h.cp->Snapshot().counters.jobs_lost, 0u);

@@ -1,0 +1,8 @@
+# ThreadSanitizer suppressions.
+#
+# The distro libgrpc/libgpr are NOT built with -fsanitize=thread, so TSan cannot see the
+# synchronisation gRPC performs internally and reports false races on its own epoll state.
+# These suppressions are deliberately narrow: they match only gRPC's event-engine poller
+# symbols. We do NOT use `called_from_lib:libgrpc`, because our service handlers run on gRPC
+# threads and every race in them would then be hidden too.
+race:grpc_event_engine::posix_engine::Epoll1Poller

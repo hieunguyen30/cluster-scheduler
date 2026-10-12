@@ -6,7 +6,9 @@
 #include <grpcpp/grpcpp.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
@@ -30,11 +32,23 @@ inline bool WaitFor(const std::function<bool()>& pred,
   return pred();
 }
 
+// Sanitizer builds are several times slower, which delays heartbeats and can trip a short dead
+// timeout. KESTREL_TIME_SCALE (set by scripts/build.sh for asan/tsan) stretches every failure-
+// detection threshold and every sleep that is compared against one. Heartbeat period is unscaled.
+inline double TimeScale() {
+  const char* e = std::getenv("KESTREL_TIME_SCALE");
+  double s = e ? std::atof(e) : 1.0;
+  return s >= 1.0 ? s : 1.0;
+}
+inline TimeUs Scaled(TimeUs t) { return static_cast<TimeUs>(static_cast<double>(t) * TimeScale()); }
+// Seconds as a string for use inside `sleep` in job scripts.
+inline std::string ScaledSeconds(double s) { return std::to_string(s * TimeScale()); }
+
 struct HarnessOptions {
   std::string policy = "best-fit";
   std::chrono::milliseconds heartbeat{100};
-  TimeUs suspect_after = 500 * kMillisecond;
-  TimeUs dead_after = 1000 * kMillisecond;
+  TimeUs suspect_after = Scaled(500 * kMillisecond);
+  TimeUs dead_after = Scaled(1000 * kMillisecond);
   TimeUs detector_interval = 50 * kMillisecond;
 };
 
@@ -78,7 +92,26 @@ class Harness {
     wc.kill_grace = std::chrono::milliseconds(300);
     workers.push_back(std::make_unique<WorkerAgent>(wc));
     workers.back()->Start();
+    agents[name] = workers.back().get();
     return workers.back().get();
+  }
+
+  std::string WorkerNameOf(JobId id) {
+    std::string name;
+    auto r = cp->GetJob(id, &name);
+    return name;
+  }
+
+  WorkerStatus StatusOf(const std::string& name) {
+    for (const Worker& w : cp->ListWorkers())
+      if (w.name == name) return w.status;
+    return WorkerStatus::DEAD;
+  }
+
+  Epoch EpochOf(const std::string& name) {
+    for (const Worker& w : cp->ListWorkers())
+      if (w.name == name) return w.epoch;
+    return 0;
   }
 
   // Waits until `n` workers are registered and ALIVE.
@@ -145,6 +178,7 @@ class Harness {
   std::shared_ptr<grpc::Channel> channel;
   std::unique_ptr<v1::SchedulerService::Stub> stub;
   std::vector<std::unique_ptr<WorkerAgent>> workers;
+  std::map<std::string, WorkerAgent*> agents;  // latest agent per worker name
 };
 
 }  // namespace kestrel::testing_util
