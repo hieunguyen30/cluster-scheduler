@@ -81,6 +81,7 @@ void ClusterState::Apply(const Record& r) {
         ++counters_.replay_skipped;
         return;
       }
+      if (!r.spec.request_id.empty()) job_by_request_id_.emplace(r.spec.request_id, r.job);
       Job j;
       j.id = r.job;
       j.spec = r.spec;
@@ -201,6 +202,10 @@ Result<JobId> ClusterState::Submit(JobSpec spec, TimeUs now) {
   if (spec.request.cpu_millis <= 0 || spec.request.mem_mib <= 0)
     return Status::Error("job request must be positive");
   if (spec.max_attempts < 1) return Status::Error("max_attempts must be >= 1");
+  if (!spec.request_id.empty()) {
+    auto it = job_by_request_id_.find(spec.request_id);
+    if (it != job_by_request_id_.end()) return it->second;  // idempotent retry
+  }
   Record r;
   r.type = RecordType::SUBMIT;
   r.time = now;

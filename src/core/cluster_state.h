@@ -127,6 +127,7 @@ class ClusterState {
   std::vector<Worker> workers_;  // never shrinks; vector index order == creation order
   std::unordered_map<WorkerId, size_t> worker_index_;
   std::unordered_map<std::string, WorkerId> worker_by_name_;
+  std::unordered_map<std::string, JobId> job_by_request_id_;
   JobId next_job_id_ = 1;
   WorkerId next_worker_id_ = 1;
   Epoch next_epoch_ = 1;

@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package kestrel.v1;
+
+message Resources {
+  int64 cpu_millis = 1;
+  int64 mem_mib = 2;
+}
+
+message JobSpec {
+  string command = 1;
+  repeated string args = 2;
+  Resources request = 3;
+  int32 max_attempts = 4;   // 0 = server default (3)
+  string request_id = 5;    // optional idempotency key
+}
+
+enum JobState {
+  JOB_STATE_UNSPECIFIED = 0;
+  JOB_STATE_PENDING = 1;
+  JOB_STATE_SCHEDULED = 2;
+  JOB_STATE_RUNNING = 3;
+  JOB_STATE_SUCCEEDED = 4;
+  JOB_STATE_FAILED = 5;
+  JOB_STATE_LOST = 6;
+  JOB_STATE_CANCELLED = 7;
+}
+
+enum WorkerStatus {
+  WORKER_STATUS_UNSPECIFIED = 0;
+  WORKER_STATUS_ALIVE = 1;
+  WORKER_STATUS_SUSPECT = 2;
+  WORKER_STATUS_DEAD = 3;
+}
+
+message JobInfo {
+  uint64 id = 1;
+  JobSpec spec = 2;
+  JobState state = 3;
+  int32 attempts = 4;
+  uint64 assigned_worker = 5;
+  string assigned_worker_name = 6;
+  uint64 generation = 7;
+  int64 submitted_us = 8;        // -1 if unset
+  int64 first_scheduled_us = 9;
+  int64 started_us = 10;
+  int64 finished_us = 11;
+  int32 exit_code = 12;
+}
+
+message WorkerInfo {
+  uint64 id = 1;
+  string name = 2;
+  uint64 epoch = 3;
+  Resources capacity = 4;
+  Resources allocated = 5;
+  WorkerStatus status = 6;
+  int64 last_heartbeat_us = 7;
+  repeated uint64 jobs = 8;
+}
+
+// ---- client API ---------------------------------------------------------------------------
+
+message SubmitJobRequest { JobSpec spec = 1; }
+message SubmitJobResponse { uint64 job_id = 1; }
+message GetJobRequest { uint64 job_id = 1; }
+message GetJobResponse { JobInfo job = 1; }
+message ListJobsRequest {
+  JobState state = 1;   // UNSPECIFIED = all
+  uint32 limit = 2;     // 0 = no limit
+}
+message ListJobsResponse { repeated JobInfo jobs = 1; }
+message CancelJobRequest { uint64 job_id = 1; }
+message CancelJobResponse {}
+message ListWorkersRequest {}
+message ListWorkersResponse { repeated WorkerInfo workers = 1; }
+
+service SchedulerService {
+  rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+  rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse);
+}
+
+// ---- worker API ---------------------------------------------------------------------------
+
+message RunningJob {
+  uint64 job_id = 1;
+  uint64 generation = 2;
+}
+
+message CompletedJob {
+  uint64 job_id = 1;
+  uint64 generation = 2;
+  int32 exit_code = 3;
+}
+
+message Assignment {
+  uint64 job_id = 1;
+  uint64 generation = 2;
+  JobSpec spec = 3;
+}
+
+message RegisterRequest {
+  string name = 1;
+  Resources capacity = 2;
+  repeated RunningJob running = 3;      // what the agent is running right now
+  repeated CompletedJob completed = 4;  // finished results it has not had acknowledged
+}
+
+message RegisterResponse {
+  uint64 worker_id = 1;
+  uint64 epoch = 2;
+  repeated uint64 kill_jobs = 3;   // reported jobs the control plane does not own: kill them
+  repeated uint64 acked_jobs = 4;
+}
+
+message HeartbeatRequest {
+  uint64 worker_id = 1;
+  uint64 epoch = 2;
+  repeated RunningJob running = 3;
+  repeated CompletedJob completed = 4;
+}
+
+message HeartbeatResponse {
+  bool reregister = 1;                // stale epoch / unknown / declared dead
+  repeated Assignment assignments = 2;
+  repeated uint64 kill_jobs = 3;
+  repeated uint64 acked_jobs = 4;
+}
+
+service WorkerService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}

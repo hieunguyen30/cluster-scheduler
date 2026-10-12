@@ -31,6 +31,26 @@ TEST(Submit, RejectsInvalidSpecs) {
   EXPECT_EQ(st.JobCount(), 0u);
 }
 
+TEST(Submit, RequestIdMakesRetriesIdempotentAcrossReplay) {
+  RecordingJournal j;
+  ClusterState st(&j);
+  JobSpec s = Spec(100, 100);
+  s.request_id = "req-1";
+  JobId a = SubmitJob(st, s);
+  JobId again = SubmitJob(st, s);  // the client retried after a lost reply
+  EXPECT_EQ(a, again);
+  EXPECT_EQ(st.JobCount(), 1u);
+  EXPECT_EQ(j.log.size(), 1u);  // the retry wrote nothing
+  s.request_id = "req-2";
+  EXPECT_NE(SubmitJob(st, s), a);
+  // After a restart the key is rebuilt from the log, so a retry is still deduplicated.
+  ClusterState re;
+  for (const Record& r : j.log) re.Replay(r);
+  s.request_id = "req-1";
+  EXPECT_EQ(SubmitJob(re, s), a);
+  EXPECT_EQ(re.JobCount(), 2u);
+}
+
 TEST(Assign, UpdatesAccountingAndState) {
   ClusterState st;
   WorkerId w = AddWorker(st, "w", R(1000, 1000));

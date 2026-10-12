@@ -15,6 +15,9 @@ struct JobSpec {
   std::vector<std::string> args;
   Resources request;
   int max_attempts = 3;
+  // Optional client-chosen idempotency key. A retried Submit with the same key returns the
+  // original job instead of creating a duplicate (journaled, so it survives a restart).
+  std::string request_id;
 };
 
 struct Job {
@@ -74,6 +77,7 @@ struct Record {
            generation == o.generation && epoch == o.epoch && exit_code == o.exit_code &&
            spec.command == o.spec.command && spec.args == o.spec.args &&
            spec.request == o.spec.request && spec.max_attempts == o.spec.max_attempts &&
+           spec.request_id == o.spec.request_id &&
            name == o.name && capacity == o.capacity;
   }
 };
