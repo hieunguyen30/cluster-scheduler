@@ -1,0 +1,15 @@
+# Google Cloud Managed Service for Prometheus scrapes the control plane's /metrics and the
+# series show up in Cloud Monitoring as prometheus.googleapis.com/kestrel_*.
+# Managed collection is always on in Autopilot (>= 1.25); only this resource is needed.
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: kestrel-control
+  namespace: kestrel
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kestrel-control
+  endpoints:
+    - port: metrics
+      interval: 15s

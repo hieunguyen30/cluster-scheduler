@@ -1,0 +1,41 @@
+# Cloud Build pipeline: test under sanitizers, then build and push the runtime image.
+# Triggered by terraform/main.tf (google_cloudbuild_trigger.ci) on pushes to main.
+# NOT RUN yet: building costs money; the owner has asked to approve cloud usage first.
+substitutions:
+  _REGION: us-central1
+  _REPO: kestrel
+
+steps:
+  # 1. ASan + UBSan: the build FAILS if any test fails (tests run inside `docker build`).
+  - id: test-asan
+    name: gcr.io/cloud-builders/docker
+    args: ['build', '--target', 'test-asan', '-t', 'kestrel-test-asan', '.']
+
+  # 2. TSan: build in an image, then RUN the tests with seccomp unconfined. Docker's default
+  #    seccomp profile blocks personality(ADDR_NO_RANDOMIZE), which TSan needs on kernels with
+  #    high ASLR entropy, so this cannot happen inside `docker build`.
+  - id: build-tsan
+    name: gcr.io/cloud-builders/docker
+    args: ['build', '--target', 'tsan', '-t', 'kestrel-test-tsan', '.']
+  - id: test-tsan
+    name: gcr.io/cloud-builders/docker
+    args: ['run', '--rm', '--security-opt', 'seccomp=unconfined', 'kestrel-test-tsan']
+
+  # 3. Runtime image, tagged with the commit and `latest`, pushed to Artifact Registry.
+  - id: build-runtime
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --target=runtime
+      - -t=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/kestrel:${SHORT_SHA}
+      - -t=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/kestrel:latest
+      - .
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/kestrel:${SHORT_SHA}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/kestrel:latest
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+timeout: 3600s

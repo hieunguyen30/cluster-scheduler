@@ -25,7 +25,8 @@ ControlPlane::~ControlPlane() { Stop(); }
 void ControlPlane::Recover(std::span<const Record> records) {
   std::lock_guard<std::mutex> lk(mu_);
   for (const Record& r : records) state_.Replay(r);
-  state_.FinishReplay(cfg_.clock());
+  // last_heartbeat in the future == "not silent yet": ghosts get dead_after + grace from now.
+  state_.FinishReplay(cfg_.clock() + cfg_.recovery_grace);
   log::Write(log::Level::INFO, "control", "recovered state from journal",
              {{"records", log::S(static_cast<uint64_t>(records.size()))},
               {"jobs", log::S(static_cast<uint64_t>(state_.JobCount()))},

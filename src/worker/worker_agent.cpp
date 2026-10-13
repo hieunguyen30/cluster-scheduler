@@ -28,6 +28,12 @@ class WorkerAgent::Rpc {
     args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 100);
     args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 100);
     args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
+    // A control-plane pod that disappears (kubectl delete --force, node loss) sends no TCP RST:
+    // the connection is black-holed and, without keepalive, gRPC keeps writing into it for
+    // minutes. Ping every 3 s, give up after 1 s. (Server permits this: see grpc_server.cpp.)
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 3000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 1000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
     channel = grpc::CreateCustomChannel(addr, grpc::InsecureChannelCredentials(), args);
     stub = v1::WorkerService::NewStub(channel);
   }
@@ -147,10 +153,25 @@ bool WorkerAgent::DoRegister() {
   return true;
 }
 
+// Called by the heartbeat thread after every RPC attempt. Keepalive eventually notices a dead
+// connection, but a fresh channel does it in ~3 heartbeat intervals and also re-resolves DNS.
+void WorkerAgent::NoteRpcResult(bool ok) {
+  if (ok) {
+    consecutive_rpc_failures_ = 0;
+    return;
+  }
+  if (++consecutive_rpc_failures_ >= kRebuildChannelAfterFailures) {
+    log::Write(log::Level::INFO, "worker", "rebuilding gRPC channel after repeated RPC failures",
+               {{"name", cfg_.name}, {"failures", log::S(consecutive_rpc_failures_)}});
+    rpc_ = std::make_unique<Rpc>(cfg_.control_addr);  // only the heartbeat thread touches rpc_
+    consecutive_rpc_failures_ = 0;
+  }
+}
+
 void WorkerAgent::Tick() {
   if (partitioned_.load()) return;
   if (!registered()) {
-    DoRegister();
+    NoteRpcResult(DoRegister());
     return;
   }
   v1::HeartbeatRequest req;
@@ -174,6 +195,7 @@ void WorkerAgent::Tick() {
   grpc::ClientContext ctx;
   ctx.set_deadline(std::chrono::system_clock::now() + cfg_.rpc_timeout);
   grpc::Status st = rpc_->stub->Heartbeat(&ctx, req, &resp);
+  NoteRpcResult(st.ok());
   if (!st.ok()) {
     log::Write(log::Level::DEBUG, "worker", "heartbeat failed",
                {{"name", cfg_.name}, {"error", st.error_message()}});
@@ -209,7 +231,7 @@ void WorkerAgent::Tick() {
   // reporting what we still run so the control plane can adopt or kill each job.
   if (reregister) {
     log::Write(log::Level::WARN, "worker", "told to re-register", {{"name", cfg_.name}});
-    DoRegister();
+    NoteRpcResult(DoRegister());
   }
 }
 

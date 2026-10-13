@@ -94,10 +94,12 @@ class Harness {
 
   std::string Address() const { return "127.0.0.1:" + std::to_string(port); }
 
-  WorkerAgent* AddWorker(const std::string& name, Resources cap = {4000, 8192}) {
+  // `control_addr` overrides the address the agent dials (e.g. a fault-injecting proxy).
+  WorkerAgent* AddWorker(const std::string& name, Resources cap = {4000, 8192},
+                         const std::string& control_addr = "") {
     WorkerConfig wc;
     wc.name = name;
-    wc.control_addr = Address();
+    wc.control_addr = control_addr.empty() ? Address() : control_addr;
     wc.capacity = cap;
     wc.heartbeat_interval = opts_.heartbeat;
     wc.rpc_timeout = std::chrono::milliseconds(500);

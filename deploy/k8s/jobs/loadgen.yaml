@@ -1,0 +1,30 @@
+# One-shot load generator Job. Edit args (or `kubectl create -f` after sed) per experiment.
+# The result line is the last line of the pod log: `kubectl logs job/kestrel-loadgen`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kestrel-loadgen
+  namespace: kestrel
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: {runAsUser: 10001, runAsNonRoot: true}
+      containers:
+        - name: loadgen
+          image: kestrel
+          imagePullPolicy: IfNotPresent
+          command: ["kestrel_loadgen"]
+          args:
+            - --control=kestrel-control:7000
+            - --seed=1
+            - --jobs=200
+            - --workers=9
+            - --load=0.85
+            - --time-scale=5
+            - --label=best-fit
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}

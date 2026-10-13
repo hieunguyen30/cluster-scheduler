@@ -1,0 +1,6 @@
+project_id = "your-throwaway-project-id"
+region     = "us-central1"
+# Optional CI trigger (requires the Cloud Build GitHub app to be connected to the project):
+# github_owner          = "your-github-user"
+# github_repo           = "kestrel"
+# build_service_account = "123456789-compute@developer.gserviceaccount.com"

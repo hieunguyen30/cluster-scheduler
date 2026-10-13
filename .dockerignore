@@ -1,0 +1,10 @@
+.git
+.tools
+build*/
+out/
+results/
+*.wal
+deploy
+terraform
+docs
+*.md

@@ -1,0 +1,99 @@
+# Worker agents. Three Deployments with different LOGICAL capacities (the same heterogeneous fleet
+# the simulator uses: 2c/8GiB, 4c/16GiB, 8c/32GiB). The capacity is an accounting number used for
+# placement, not a limit: the pods themselves are tiny, and jobs are `sleep`.
+# Kill a pod to simulate a node failure; the Deployment replaces it with a NEW worker name.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kestrel-worker-small
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: small}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: small}
+    spec:
+      terminationGracePeriodSeconds: 10
+      securityContext: {runAsUser: 10001, runAsNonRoot: true}
+      containers:
+        - name: worker
+          image: kestrel
+          imagePullPolicy: IfNotPresent
+          command: ["kestrel_worker"]
+          args:
+            - --control=kestrel-control:7000
+            - --name=$(POD_NAME)
+            - --cpu-millis=2000
+            - --mem-mib=8192
+            - --heartbeat-ms=200
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 128Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kestrel-worker-medium
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: medium}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: medium}
+    spec:
+      terminationGracePeriodSeconds: 10
+      securityContext: {runAsUser: 10001, runAsNonRoot: true}
+      containers:
+        - name: worker
+          image: kestrel
+          imagePullPolicy: IfNotPresent
+          command: ["kestrel_worker"]
+          args:
+            - --control=kestrel-control:7000
+            - --name=$(POD_NAME)
+            - --cpu-millis=4000
+            - --mem-mib=16384
+            - --heartbeat-ms=200
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 128Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kestrel-worker-large
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: large}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: kestrel-worker, kestrel/size: large}
+    spec:
+      terminationGracePeriodSeconds: 10
+      securityContext: {runAsUser: 10001, runAsNonRoot: true}
+      containers:
+        - name: worker
+          image: kestrel
+          imagePullPolicy: IfNotPresent
+          command: ["kestrel_worker"]
+          args:
+            - --control=kestrel-control:7000
+            - --name=$(POD_NAME)
+            - --cpu-millis=8000
+            - --mem-mib=32768
+            - --heartbeat-ms=200
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 128Mi}

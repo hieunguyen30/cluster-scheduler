@@ -28,6 +28,12 @@ struct ControlPlaneConfig {
   TimeUs detector_interval = 250 * kMillisecond;
   TimeUs scheduler_tick = 500 * kMillisecond;  // safety net; real wakeups are event-driven
   int default_max_attempts = 3;
+  // After WAL replay, workers get dead_after + recovery_grace to re-register before they can be
+  // declared dead. A restarted control plane is unreachable for a while from the workers' side
+  // (pod restart, black-holed connections, DNS), and killing live workers for that would
+  // requeue jobs that are running fine. Cost: workers that died WITH the control plane are
+  // noticed that much later.
+  TimeUs recovery_grace = 0;
   std::function<TimeUs()> clock;  // defaults to wall-clock microseconds
 };
 

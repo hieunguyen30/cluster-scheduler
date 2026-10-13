@@ -1,0 +1,23 @@
+# GKE Autopilot. The image reference is set by scripts/gke_deploy.sh
+# (`kustomize edit set image kestrel=REGION-docker.pkg.dev/PROJECT/kestrel/kestrel:TAG`).
+# Workers start at 0 replicas and the whole thing is meant to be scaled to 0 when idle
+# (scripts/gke_scale.sh): Autopilot bills per pod resource request while pods exist.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - podmonitoring.yaml
+patches:
+  - target: {kind: StatefulSet, name: kestrel-control}
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 10Gi
+      - op: add
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: standard-rwo
+  - target: {kind: Deployment, name: "kestrel-worker-.*"}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0

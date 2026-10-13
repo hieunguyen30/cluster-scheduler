@@ -66,3 +66,7 @@ target_link_libraries(kestrel_worker PRIVATE kestrel_worker_lib)
 add_executable(kestrelctl cli/kestrelctl.cpp)
 target_link_libraries(kestrelctl PRIVATE kestrel_proto)
 target_include_directories(kestrelctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(kestrel_loadgen cli/loadgen.cpp)
+target_link_libraries(kestrel_loadgen PRIVATE kestrel_proto kestrel_sim_lib)
+target_include_directories(kestrel_loadgen PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

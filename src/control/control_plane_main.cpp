@@ -20,7 +20,8 @@ void Usage() {
                "                       [--suspect-after-ms 3000] [--dead-after-ms 5000]\n"
                "                       [--detector-interval-ms 250] [--log-level debug|info|warn]\n"
                "                       [--wal-path FILE] [--wal-sync every|interval|none]\n"
-               "                       [--wal-interval-ms 10]\n");
+               "                       [--wal-interval-ms 10] [--metrics-port 9090 (0 = off)]\n"
+               "                       [--recovery-grace-ms 10000]\n");
   std::exit(2);
 }
 }  // namespace
@@ -48,6 +49,7 @@ int main(int argc, char** argv) {
   cfg.suspect_after = f.Int("suspect-after-ms", 3000) * kMillisecond;
   cfg.dead_after = f.Int("dead-after-ms", 5000) * kMillisecond;
   cfg.detector_interval = f.Int("detector-interval-ms", 250) * kMillisecond;
+  cfg.recovery_grace = f.Int("recovery-grace-ms", 10000) * kMillisecond;
 
   // Persistence: replay the WAL (if any) BEFORE serving a single RPC.
   std::unique_ptr<Wal> wal;

@@ -2,6 +2,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <unordered_map>
+
 #include "kestrel.grpc.pb.h"
 #include "rpc/convert.h"
 
@@ -51,8 +53,13 @@ class ControlPlaneServer::ClientImpl final : public v1::SchedulerService::Servic
       case v1::JOB_STATE_CANCELLED: filter = JobState::CANCELLED; break;
       default: break;
     }
-    for (const Job& j : cp_.ListJobs(filter, req->limit()))
-      rpc::ToProto(j, "", resp->add_jobs());
+    std::unordered_map<WorkerId, std::string> names;
+    for (const Worker& w : cp_.ListWorkers()) names[w.id] = w.name;
+    for (const Job& j : cp_.ListJobs(filter, req->limit())) {
+      const bool active = j.state == JobState::SCHEDULED || j.state == JobState::RUNNING;
+      auto it = names.find(j.assigned_worker);
+      rpc::ToProto(j, active && it != names.end() ? it->second : "", resp->add_jobs());
+    }
     return grpc::Status::OK;
   }
 
@@ -121,6 +128,10 @@ ControlPlaneServer::~ControlPlaneServer() {
 
 Result<int> ControlPlaneServer::Start(const std::string& address) {
   grpc::ServerBuilder builder;
+  // Workers send keepalive pings every 3 s (see worker_agent.cpp). By default a server treats
+  // pings more often than every 5 minutes as abuse and sends GOAWAY(too_many_pings).
+  builder.AddChannelArgument(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 1000);
+  builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
   int port = 0;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials(), &port);
   builder.RegisterService(client_service_.get());

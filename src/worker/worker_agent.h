@@ -67,6 +67,7 @@ class WorkerAgent {
   void HeartbeatLoop();
   void ReaperLoop();
   void Tick();
+  void NoteRpcResult(bool ok);
   bool DoRegister();
   void StartJobLocked(JobId id, uint64_t gen, const JobSpec& spec);
   void KillJobLocked(JobId id);
@@ -74,7 +75,9 @@ class WorkerAgent {
   void KillAllAndReap();
 
   WorkerConfig cfg_;
-  std::unique_ptr<Rpc> rpc_;
+  static constexpr int kRebuildChannelAfterFailures = 3;
+  std::unique_ptr<Rpc> rpc_;  // replaced only by the heartbeat thread
+  int consecutive_rpc_failures_ = 0;  // heartbeat thread only
   std::atomic<bool> partitioned_{false};
 
   std::mutex mu_;
