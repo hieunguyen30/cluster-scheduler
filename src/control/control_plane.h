@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 
+#include "common/histogram.h"
 #include "core/cluster_state.h"
 #include "core/scheduler.h"
 
@@ -37,6 +38,7 @@ struct ClusterStats {
   Resources capacity_alive;   // sum over ALIVE workers
   Resources allocated_alive;  // allocated on ALIVE workers
   Counters counters;
+  uint64_t detector_stalls = 0;  // ticks that found the control plane itself had been stalled
 };
 
 class ControlPlane {
@@ -66,6 +68,9 @@ class ControlPlane {
                             std::span<const CompletedReport> completed);
 
   ClusterStats Snapshot();
+  // Submit -> first assignment, in seconds, as observed by the real scheduler thread. This
+  // includes time spent waiting for capacity; it is NOT pure decision latency.
+  const Histogram& scheduling_latency() const { return sched_latency_; }
   // Run `fn` with the state locked. Test/diagnostic hook only.
   void WithState(const std::function<void(const ClusterState&)>& fn);
 
@@ -83,9 +88,11 @@ class ControlPlane {
   std::condition_variable detector_cv_;
   bool wake_ = false;
   bool stop_ = false;
+  uint64_t detector_stalls_ = 0;  // guarded by mu_
   bool started_ = false;
   ClusterState state_;
   Scheduler scheduler_;
+  Histogram sched_latency_{Histogram::LatencyBounds()};
   std::thread sched_thread_, detector_thread_;
 };
 

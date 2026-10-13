@@ -70,6 +70,8 @@ void ControlPlane::SchedulerLoop() {
     for (JobId id : scheduler_.RunPass(state_, now)) {
       const Job* j = state_.FindJob(id);
       const Worker* w = state_.FindWorker(j->assigned_worker);
+      if (j->attempts == 1)  // first placement only: reschedules would double count one job
+        sched_latency_.Observe(static_cast<double>(now - j->submitted) / 1e6);
       log::Write(log::Level::INFO, "sched", "assigned",
                  {{"job", log::S(id)},
                   {"worker", log::S(j->assigned_worker)},
@@ -83,11 +85,25 @@ void ControlPlane::SchedulerLoop() {
 
 void ControlPlane::DetectorLoop() {
   std::unique_lock<std::mutex> lk(mu_);
+  TimeUs last_tick = cfg_.clock();
   while (!stop_) {
     detector_cv_.wait_for(lk, std::chrono::microseconds(cfg_.detector_interval),
                           [this] { return stop_; });
     if (stop_) break;
     const TimeUs now = cfg_.clock();
+    // Self-monitoring. This tick is late if some other thread held mu_ for a long time (the
+    // journal fsync runs under it) or the whole process was paused. While we were stuck, every
+    // heartbeat handler was stuck too, so "silence" over that window is OUR fault, not the
+    // workers'. Without this credit a slow fsync makes the control plane declare every worker
+    // dead the moment it wakes up, before it has processed the heartbeats queued behind the lock.
+    const TimeUs late = now - last_tick - cfg_.detector_interval;
+    if (late > cfg_.detector_interval) {
+      state_.CreditSilence(late, now);
+      ++detector_stalls_;
+      log::Write(log::Level::WARN, "detector", "detector was stalled; crediting workers",
+                 {{"stall_ms", log::S(late / 1000)}});
+    }
+    last_tick = now;
     // Capture the pre-tick status so SUSPECT transitions are logged too.
     std::vector<std::pair<WorkerId, WorkerStatus>> before;
     for (const Worker& w : state_.Workers()) before.emplace_back(w.id, w.status);
@@ -205,6 +221,7 @@ ClusterStats ControlPlane::Snapshot() {
     }
   }
   s.counters = state_.counters();
+  s.detector_stalls = detector_stalls_;
   return s;
 }
 

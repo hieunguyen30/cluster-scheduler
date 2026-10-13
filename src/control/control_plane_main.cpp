@@ -8,6 +8,7 @@
 #include "common/log.h"
 #include "control/control_plane.h"
 #include "control/grpc_server.h"
+#include "control/metrics.h"
 #include "wal/wal.h"
 
 using namespace kestrel;
@@ -78,6 +79,16 @@ int main(int argc, char** argv) {
   ControlPlane cp(cfg, wal.get());
   if (wal) cp.Recover(recovered);
   cp.Start();
+  MetricsServer metrics([&] { return RenderMetrics(cp, wal.get()); });
+  const int metrics_port = static_cast<int>(f.Int("metrics-port", 9090));
+  if (metrics_port > 0) {
+    int bound = metrics.Start("0.0.0.0", metrics_port);
+    if (bound < 0) {
+      std::fprintf(stderr, "cannot listen on metrics port %d\n", metrics_port);
+      return 1;
+    }
+    log::Write(log::Level::INFO, "control", "metrics listening", {{"port", log::S(bound)}});
+  }
   ControlPlaneServer server(cp);
   auto port = server.Start(f.Str("listen", "0.0.0.0:7000"));
   if (!port.ok()) {

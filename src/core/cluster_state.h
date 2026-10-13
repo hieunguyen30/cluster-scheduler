@@ -89,6 +89,10 @@ class ClusterState {
   // ->DEAD after `dead_after`, requeueing the jobs of newly dead workers. Returns new DEADs.
   std::vector<WorkerId> CheckWorkers(TimeUs now, TimeUs suspect_after, TimeUs dead_after);
   Status MarkWorkerDead(WorkerId worker, TimeUs now);
+  // The control plane itself was unresponsive for `stall` (a slow fsync under the global lock, a
+  // frozen VM): no heartbeat could have been processed, so that silence says nothing about the
+  // workers. Push every non-DEAD worker's last heartbeat forward by `stall` (never past `now`).
+  void CreditSilence(TimeUs stall, TimeUs now);
 
   // ---- replay (phase 4) ------------------------------------------------------------------
   // Apply a previously journaled record without journaling it again.

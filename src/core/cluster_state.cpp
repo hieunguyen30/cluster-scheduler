@@ -469,6 +469,14 @@ Status ClusterState::MarkWorkerDead(WorkerId worker, TimeUs now) {
   return Status::Ok();
 }
 
+void ClusterState::CreditSilence(TimeUs stall, TimeUs now) {
+  if (stall <= 0) return;
+  for (Worker& w : workers_) {
+    if (w.status == WorkerStatus::DEAD) continue;
+    w.last_heartbeat = std::min(now, w.last_heartbeat + stall);
+  }
+}
+
 std::vector<WorkerId> ClusterState::CheckWorkers(TimeUs now, TimeUs suspect_after,
                                                  TimeUs dead_after) {
   std::vector<WorkerId> dead;

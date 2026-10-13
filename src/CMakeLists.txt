@@ -50,7 +50,8 @@ target_compile_options(kestrel_proto PRIVATE -w)
 # ---- control plane, worker, CLI ----------------------------------------------------------
 add_library(kestrel_control_lib STATIC
   control/control_plane.cpp
-  control/grpc_server.cpp)
+  control/grpc_server.cpp
+  control/metrics.cpp)
 target_link_libraries(kestrel_control_lib PUBLIC kestrel_core kestrel_common kestrel_wal kestrel_proto)
 
 add_library(kestrel_worker_lib STATIC worker/worker_agent.cpp)
