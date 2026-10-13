@@ -1,0 +1,6 @@
+# Experiment B2 (frozen agent: duplicate execution + fencing) setup: date=2026-10-13T01:12Z commit=03f756b cpus=14 workers=9 heartbeat_ms=1000 suspect_after_ms=3000 dead_after_ms=5000 wal=every
+EXPB2 rep=1 jobs=12 jobs_on_frozen_worker=4 frozen_to_dead_s=4.753 concurrent_duplicate_jobs=4 zombie_processes_alive_before_heal=4 heal_to_zombies_killed_s=0.055
+EXPB2 rep=2 jobs=12 jobs_on_frozen_worker=4 frozen_to_dead_s=4.810 concurrent_duplicate_jobs=4 zombie_processes_alive_before_heal=4 heal_to_zombies_killed_s=0.055
+EXPB2 rep=3 jobs=12 jobs_on_frozen_worker=4 frozen_to_dead_s=4.912 concurrent_duplicate_jobs=4 zombie_processes_alive_before_heal=4 heal_to_zombies_killed_s=0.055
+EXPB2 rep=4 jobs=12 jobs_on_frozen_worker=4 frozen_to_dead_s=4.758 concurrent_duplicate_jobs=4 zombie_processes_alive_before_heal=4 heal_to_zombies_killed_s=0.058
+EXPB2 rep=5 jobs=12 jobs_on_frozen_worker=4 frozen_to_dead_s=4.777 concurrent_duplicate_jobs=4 zombie_processes_alive_before_heal=4 heal_to_zombies_killed_s=0.056

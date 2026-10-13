@@ -1,0 +1,6 @@
+# Experiment C (control plane kill -9 + WAL restart) setup: date=2026-10-13T01:12Z commit=03f756b cpus=14 workers=9 heartbeat_ms=1000 suspect_after_ms=3000 dead_after_ms=5000 wal=every
+EXPC rep=1 jobs=40 running_before_kill=40 wal_bytes=12865 restart_to_serving_s=0.024 restart_to_all_workers_alive_s=0.098 jobs_in_table=40 succeeded=40 jobs_with_attempts_gt1=0 executions=40 jobs_executed_more_than_once=0
+EXPC rep=2 jobs=40 running_before_kill=40 wal_bytes=12865 restart_to_serving_s=0.016 restart_to_all_workers_alive_s=0.357 jobs_in_table=40 succeeded=40 jobs_with_attempts_gt1=0 executions=40 jobs_executed_more_than_once=0
+EXPC rep=3 jobs=40 running_before_kill=40 wal_bytes=12865 restart_to_serving_s=0.019 restart_to_all_workers_alive_s=0.161 jobs_in_table=40 succeeded=40 jobs_with_attempts_gt1=0 executions=40 jobs_executed_more_than_once=0
+EXPC rep=4 jobs=40 running_before_kill=40 wal_bytes=12865 restart_to_serving_s=0.023 restart_to_all_workers_alive_s=0.165 jobs_in_table=40 succeeded=40 jobs_with_attempts_gt1=0 executions=40 jobs_executed_more_than_once=0
+EXPC rep=5 jobs=40 running_before_kill=40 wal_bytes=12865 restart_to_serving_s=0.020 restart_to_all_workers_alive_s=0.165 jobs_in_table=40 succeeded=40 jobs_with_attempts_gt1=0 executions=40 jobs_executed_more_than_once=0

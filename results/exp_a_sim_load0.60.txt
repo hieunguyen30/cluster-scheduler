@@ -1,0 +1,13 @@
+# kestrel_sim policies=all first_seed=1 seeds=50 workers=9 jobs=2000 load=0.600
+# fleet cycles 2c/8GiB, 4c/16GiB, 8c/32GiB; mean inter-arrival 224.5 ms
+# class small     cpu=100m mem=128MiB dur=[1,5]s weight=40
+# class medium    cpu=500m mem=1024MiB dur=[2,10]s weight=25
+# class large     cpu=2000m mem=4096MiB dur=[5,20]s weight=10
+# class cpu-heavy cpu=2000m mem=512MiB dur=[3,12]s weight=12
+# class mem-heavy cpu=500m mem=8192MiB dur=[3,12]s weight=13
+
+policy        makespan    cpu_mk    mem_mk  cpu_busy  mem_busy   frag_mk frag_busy  wait_p50  wait_p99
+round-robin     462.8s    0.5810    0.3838    0.8026    0.4545    0.0442    0.9919     0.00s     1.12s
+first-fit       462.7s    0.5812    0.3839    0.8228    0.4807    0.0120    0.9013     0.00s     0.37s
+best-fit        462.7s    0.5812    0.3839    0.7773    0.4438    0.0081    0.7756     0.00s     0.25s
+(means over 50 seeds; per-seed rows in the CSV)

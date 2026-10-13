@@ -1,0 +1,12 @@
+# WAL micro-benchmark: date=2026-10-13T01:21Z commit=03f756b kernel=6.6.87.2-microsoft-standard-WSL2
+# filesystem of /tmp: ext4 on /dev/sdf
+# walbench dir=/tmp records=3000 batch=1
+sync           ops/s    p50_us    p90_us    p99_us    max_us      MB/s
+every            255      3823      4625      6314     18487      0.04
+interval      690387         1         1         5       108    100.80
+none          542111         2         2         5        50     79.15
+# walbench dir=/tmp records=3000 batch=10
+sync           ops/s    p50_us    p90_us    p99_us    max_us      MB/s
+every            276      3465      4337      5426     21269      0.36
+interval       74443         7        10       107      4234     97.97
+none          108914         7        10        29       344    143.33

@@ -1,0 +1,16 @@
+# Experiment B (kill K worker nodes) setup: date=2026-10-13T01:12Z commit=03f756b cpus=14 workers=9 heartbeat_ms=1000 suspect_after_ms=3000 dead_after_ms=5000 wal=every
+EXPB k=1 rep=1 jobs=24 lost_jobs=4 detect_first_s=4.527 detect_last_s=4.527 resched_s=6.522 succeeded=24 jobs_with_attempts_gt1=4 executions=28 distinct_jobs_executed=24
+EXPB k=2 rep=1 jobs=24 lost_jobs=8 detect_first_s=5.782 detect_last_s=5.787 resched_s=7.883 succeeded=24 jobs_with_attempts_gt1=8 executions=32 distinct_jobs_executed=24
+EXPB k=3 rep=1 jobs=24 lost_jobs=16 detect_first_s=4.561 detect_last_s=4.574 resched_s=7.008 succeeded=24 jobs_with_attempts_gt1=16 executions=40 distinct_jobs_executed=24
+EXPB k=1 rep=2 jobs=24 lost_jobs=4 detect_first_s=4.667 detect_last_s=4.667 resched_s=6.699 succeeded=24 jobs_with_attempts_gt1=4 executions=28 distinct_jobs_executed=24
+EXPB k=2 rep=2 jobs=24 lost_jobs=8 detect_first_s=5.842 detect_last_s=5.846 resched_s=7.960 succeeded=24 jobs_with_attempts_gt1=8 executions=32 distinct_jobs_executed=24
+EXPB k=3 rep=2 jobs=24 lost_jobs=16 detect_first_s=4.575 detect_last_s=4.586 resched_s=6.671 succeeded=24 jobs_with_attempts_gt1=16 executions=40 distinct_jobs_executed=24
+EXPB k=1 rep=3 jobs=24 lost_jobs=4 detect_first_s=4.733 detect_last_s=4.733 resched_s=6.743 succeeded=24 jobs_with_attempts_gt1=4 executions=28 distinct_jobs_executed=24
+EXPB k=2 rep=3 jobs=24 lost_jobs=8 detect_first_s=4.538 detect_last_s=4.543 resched_s=6.606 succeeded=24 jobs_with_attempts_gt1=8 executions=32 distinct_jobs_executed=24
+EXPB k=3 rep=3 jobs=24 lost_jobs=16 detect_first_s=4.600 detect_last_s=4.611 resched_s=8.362 succeeded=24 jobs_with_attempts_gt1=16 executions=40 distinct_jobs_executed=24
+EXPB k=1 rep=4 jobs=24 lost_jobs=4 detect_first_s=4.551 detect_last_s=4.551 resched_s=6.502 succeeded=24 jobs_with_attempts_gt1=4 executions=28 distinct_jobs_executed=24
+EXPB k=2 rep=4 jobs=24 lost_jobs=12 detect_first_s=4.550 detect_last_s=4.557 resched_s=6.633 succeeded=24 jobs_with_attempts_gt1=12 executions=36 distinct_jobs_executed=24
+EXPB k=3 rep=4 jobs=24 lost_jobs=16 detect_first_s=5.952 detect_last_s=5.960 resched_s=8.058 succeeded=24 jobs_with_attempts_gt1=16 executions=40 distinct_jobs_executed=24
+EXPB k=1 rep=5 jobs=24 lost_jobs=4 detect_first_s=4.556 detect_last_s=4.556 resched_s=6.569 succeeded=24 jobs_with_attempts_gt1=4 executions=28 distinct_jobs_executed=24
+EXPB k=2 rep=5 jobs=24 lost_jobs=8 detect_first_s=4.558 detect_last_s=4.563 resched_s=6.596 succeeded=24 jobs_with_attempts_gt1=8 executions=32 distinct_jobs_executed=24
+EXPB k=3 rep=5 jobs=24 lost_jobs=12 detect_first_s=5.891 detect_last_s=5.899 resched_s=8.002 succeeded=24 jobs_with_attempts_gt1=12 executions=36 distinct_jobs_executed=24

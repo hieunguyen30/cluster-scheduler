@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Kill stray Kestrel processes left behind by an interrupted demo/benchmark run.
-for pat in '[b]ench_local.sh' '[d]emo_local.sh' '[d]emo_restart.sh' '[k]estrel_control' '[k]estrel_worker' '[k]estrel_loadgen'; do
+# Kill stray Kestrel binaries left behind by an interrupted demo/benchmark run. Matches only the
+# binaries (never script names), so it cannot kill its own caller.
+for pat in '[k]estrel_control' '[k]estrel_worker' '[k]estrel_loadgen'; do
   pkill -f "$pat" 2>/dev/null || true
 done
 sleep 0.5
