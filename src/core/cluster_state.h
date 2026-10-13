@@ -93,8 +93,9 @@ class ClusterState {
   // ---- replay (phase 4) ------------------------------------------------------------------
   // Apply a previously journaled record without journaling it again.
   void Replay(const Record& r);
-  // After replay every known worker is "unknown": SUSPECT with heartbeat = now, so the failure
-  // detector declares it DEAD unless it re-registers within the dead timeout.
+  // After replay every known worker is "unknown": SUSPECT with heartbeat = now and epoch 0, so
+  // its heartbeats are rejected until it re-registers, and the failure detector declares it DEAD
+  // unless that happens within the dead timeout.
   void FinishReplay(TimeUs now);
 
   // ---- queries ---------------------------------------------------------------------------

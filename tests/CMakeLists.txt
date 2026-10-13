@@ -7,6 +7,8 @@ endfunction()
 
 kestrel_test(core_tests cluster_state_test.cpp policies_test.cpp scheduler_test.cpp)
 kestrel_test(sim_tests simulator_test.cpp)
+kestrel_test(wal_tests wal_test.cpp)
+target_link_libraries(wal_tests PRIVATE kestrel_wal)
 
 # Integration tests: real gRPC, real subprocesses.
 function(kestrel_integration_test name)
@@ -22,3 +24,4 @@ endfunction()
 
 kestrel_integration_test(integration_tests integration_test.cpp)
 kestrel_integration_test(failure_tests failure_test.cpp)
+kestrel_integration_test(restart_tests restart_test.cpp)

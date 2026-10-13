@@ -193,6 +193,10 @@ void ClusterState::FinishReplay(TimeUs now) {
   for (Worker& w : workers_) {
     w.status = WorkerStatus::SUSPECT;
     w.last_heartbeat = now;
+    // Epoch 0 matches no live agent, so every heartbeat is rejected with `reregister` and each
+    // agent must Register (reporting what it runs) before it is trusted again. The next epoch
+    // handed out is past every replayed one (next_epoch_), so incarnations never collide.
+    w.epoch = 0;
   }
 }
 
@@ -373,7 +377,7 @@ HeartbeatResult ClusterState::Heartbeat(WorkerId worker, Epoch epoch,
   Worker* w = MutableWorker(worker);
   // Fencing: a heartbeat is honoured only from the current incarnation of a worker that has
   // not been declared dead. Anything else must re-register and have its jobs reconciled.
-  if (w == nullptr || w->epoch != epoch || w->status == WorkerStatus::DEAD) {
+  if (w == nullptr || w->epoch == 0 || w->epoch != epoch || w->status == WorkerStatus::DEAD) {
     res.reregister = true;
     return res;
   }

@@ -6,3 +6,11 @@
 # symbols. We do NOT use `called_from_lib:libgrpc`, because our service handlers run on gRPC
 # threads and every race in them would then be hidden too.
 race:grpc_event_engine::posix_engine::Epoll1Poller
+# gRPC client call ops: the request/response buffers are moved between the calling thread and
+# gRPC's default-executor thread inside libgrpc (visible after a channel reconnect). Both stacks
+# are gRPC-internal; our own request objects are local to the calling thread.
+race:grpc::internal::CallOpSet
+# gRPC reconnect path: TCP connector state shared between gRPC's event-engine and global-timer
+# threads. The stacks contain no Kestrel frames at all.
+race:grpc_tcp_client_create_from_prepared_fd
+# POLICY: a report that has a kestrel:: frame is never suppressed; it gets fixed.

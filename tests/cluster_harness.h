@@ -17,6 +17,7 @@
 #include "control/control_plane.h"
 #include "control/grpc_server.h"
 #include "kestrel.grpc.pb.h"
+#include "wal/wal.h"
 #include "worker/worker_agent.h"
 
 namespace kestrel::testing_util {
@@ -54,19 +55,30 @@ struct HarnessOptions {
 
 class Harness {
  public:
-  explicit Harness(HarnessOptions opts = {}, Journal* journal = nullptr) : opts_(opts) {
-    ControlPlaneConfig cfg;
-    cfg.policy = opts.policy;
-    cfg.suspect_after = opts.suspect_after;
-    cfg.dead_after = opts.dead_after;
-    cfg.detector_interval = opts.detector_interval;
-    cfg.scheduler_tick = 100 * kMillisecond;
-    cp = std::make_unique<ControlPlane>(cfg, journal);
-  }
+  // With a non-empty `wal_path` the control plane journals to (and recovers from) that file.
+  explicit Harness(HarnessOptions opts = {}, std::string wal_path = "")
+      : opts_(opts), wal_path_(std::move(wal_path)) {}
   ~Harness() { Shutdown(); }
 
-  // Starts the control plane (call after any Recover()).
+  // Starts the control plane: opens/replays the WAL if configured, then serves.
   void StartControl(const std::string& listen = "127.0.0.1:0") {
+    ControlPlaneConfig cfg;
+    cfg.policy = opts_.policy;
+    cfg.suspect_after = opts_.suspect_after;
+    cfg.dead_after = opts_.dead_after;
+    cfg.detector_interval = opts_.detector_interval;
+    cfg.scheduler_tick = 100 * kMillisecond;
+    std::vector<Record> recovered;
+    if (!wal_path_.empty()) {
+      auto w = Wal::Open(wal_path_, WalOptions{}, &recovered, &recovery);
+      if (!w.ok()) {
+        ADD_FAILURE() << "Wal::Open: " << w.status().message();
+        std::abort();
+      }
+      wal = std::move(w.value());
+    }
+    cp = std::make_unique<ControlPlane>(cfg, wal.get());
+    if (wal) cp->Recover(recovered);
     cp->Start();
     server = std::make_unique<ControlPlaneServer>(*cp);
     auto port_r = server->Start(listen);
@@ -163,15 +175,32 @@ class Harness {
     return out;
   }
 
+  // Kill the control plane process: threads, server and in-memory state vanish; only what was
+  // fsynced to the WAL survives. Workers keep running and heartbeating into the void.
+  void CrashControl() {
+    if (server) server->Shutdown();
+    server.reset();
+    if (cp) cp->Stop();
+    cp.reset();
+    wal.reset();
+  }
+
+  // Crash, then bring a fresh control plane up on the SAME port, recovering from the WAL.
+  void RestartControl() {
+    CrashControl();
+    StartControl("127.0.0.1:" + std::to_string(port));
+  }
+
   void Shutdown() {
     for (auto& w : workers) w->Stop();
     workers.clear();
-    if (server) server->Shutdown();
-    server.reset();
-    cp->Stop();
+    CrashControl();
   }
 
   HarnessOptions opts_;
+  std::string wal_path_;
+  std::unique_ptr<Wal> wal;
+  WalRecoveryInfo recovery;
   std::unique_ptr<ControlPlane> cp;
   std::unique_ptr<ControlPlaneServer> server;
   int port = 0;

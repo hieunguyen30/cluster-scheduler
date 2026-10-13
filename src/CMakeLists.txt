@@ -8,6 +8,9 @@ target_include_directories(kestrel_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_library(kestrel_common STATIC common/log.cpp)
 target_include_directories(kestrel_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_library(kestrel_wal STATIC wal/wal.cpp)
+target_link_libraries(kestrel_wal PUBLIC kestrel_core kestrel_common)
+
 add_library(kestrel_sim_lib STATIC
   sim/workload.cpp
   sim/simulator.cpp)
@@ -48,7 +51,7 @@ target_compile_options(kestrel_proto PRIVATE -w)
 add_library(kestrel_control_lib STATIC
   control/control_plane.cpp
   control/grpc_server.cpp)
-target_link_libraries(kestrel_control_lib PUBLIC kestrel_core kestrel_common kestrel_proto)
+target_link_libraries(kestrel_control_lib PUBLIC kestrel_core kestrel_common kestrel_wal kestrel_proto)
 
 add_library(kestrel_worker_lib STATIC worker/worker_agent.cpp)
 target_link_libraries(kestrel_worker_lib PUBLIC kestrel_core kestrel_common kestrel_proto)

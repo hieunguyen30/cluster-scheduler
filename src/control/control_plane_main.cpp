@@ -8,6 +8,7 @@
 #include "common/log.h"
 #include "control/control_plane.h"
 #include "control/grpc_server.h"
+#include "wal/wal.h"
 
 using namespace kestrel;
 
@@ -16,7 +17,9 @@ void Usage() {
   std::fprintf(stderr,
                "usage: kestrel_control [--listen 0.0.0.0:7000] [--policy best-fit|first-fit|round-robin]\n"
                "                       [--suspect-after-ms 3000] [--dead-after-ms 5000]\n"
-               "                       [--detector-interval-ms 250] [--log-level debug|info|warn]\n");
+               "                       [--detector-interval-ms 250] [--log-level debug|info|warn]\n"
+               "                       [--wal-path FILE] [--wal-sync every|interval|none]\n"
+               "                       [--wal-interval-ms 10]\n");
   std::exit(2);
 }
 }  // namespace
@@ -45,7 +48,35 @@ int main(int argc, char** argv) {
   cfg.dead_after = f.Int("dead-after-ms", 5000) * kMillisecond;
   cfg.detector_interval = f.Int("detector-interval-ms", 250) * kMillisecond;
 
-  ControlPlane cp(cfg);
+  // Persistence: replay the WAL (if any) BEFORE serving a single RPC.
+  std::unique_ptr<Wal> wal;
+  std::vector<Record> recovered;
+  const std::string wal_path = f.Str("wal-path");
+  if (!wal_path.empty()) {
+    WalOptions wo;
+    const std::string sync = f.Str("wal-sync", "every");
+    if (sync == "every") wo.sync = WalSync::EVERY;
+    else if (sync == "interval") wo.sync = WalSync::INTERVAL;
+    else if (sync == "none") wo.sync = WalSync::NONE;
+    else Usage();
+    wo.interval_ms = static_cast<int>(f.Int("wal-interval-ms", 10));
+    WalRecoveryInfo info;
+    auto w = Wal::Open(wal_path, wo, &recovered, &info);
+    if (!w.ok()) {
+      std::fprintf(stderr, "cannot open WAL %s: %s\n", wal_path.c_str(), w.status().message().c_str());
+      return 1;
+    }
+    wal = std::move(w.value());
+    log::Write(log::Level::INFO, "wal", "opened",
+               {{"path", wal_path},
+                {"frames", log::S(info.frames)},
+                {"records", log::S(info.records)},
+                {"torn_bytes_truncated", log::S(info.torn_bytes_truncated)},
+                {"sync", sync}});
+  }
+
+  ControlPlane cp(cfg, wal.get());
+  if (wal) cp.Recover(recovered);
   cp.Start();
   ControlPlaneServer server(cp);
   auto port = server.Start(f.Str("listen", "0.0.0.0:7000"));
