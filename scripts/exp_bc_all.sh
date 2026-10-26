@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run experiments B (K=1,2,3), B2 and C, 5 repetitions each, on real local processes with the
-# DESIGN.md timing defaults. Raw lines go to results/exp_b.txt, exp_b2.txt, exp_c.txt.
+# default timings. Raw lines go to results/exp_b.txt, exp_b2.txt, exp_c.txt.
 cd "$(dirname "$0")/.."
 mkdir -p results
 REPS="${REPS:-5}"

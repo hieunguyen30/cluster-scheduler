@@ -23,7 +23,7 @@ struct SimJob {
   std::string job_class;
 };
 
-// The documented default mix (see README / DECISIONS.md): small, medium, large, plus
+// The documented default mix (see README): small, medium, large, plus
 // CPU-heavy and memory-heavy jobs so that fragmentation can appear.
 std::vector<JobClass> DefaultJobClasses();
 

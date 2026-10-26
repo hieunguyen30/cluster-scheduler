@@ -23,7 +23,7 @@ TEST(Integration, SubmittedJobRunsToSuccess) {
   EXPECT_EQ(job.attempts, 1);
   EXPECT_EQ(job.exit_code, 0);
   // `started` may legitimately be unset: RUNNING is only learned from a heartbeat, and this job
-  // can finish within one heartbeat interval (SCHEDULED -> SUCCEEDED directly; DECISIONS D18).
+  // can finish within one heartbeat interval (SCHEDULED -> SUCCEEDED directly).
   EXPECT_NE(job.finished, kUnsetTime);
   EXPECT_EQ(h.CheckInvariants(), "");
 }
@@ -36,7 +36,7 @@ TEST(Integration, NonZeroExitFailsWithoutRetry) {
   JobId j = h.Sh("exit 7");
   ASSERT_TRUE(h.WaitState(j, JobState::FAILED));
   EXPECT_EQ(h.Get(j).exit_code, 7);
-  EXPECT_EQ(h.Get(j).attempts, 1);  // application failures are not retried (D11)
+  EXPECT_EQ(h.Get(j).attempts, 1);  // application failures are not retried
 }
 
 TEST(Integration, MissingExecutableFailsWith127) {

@@ -1,4 +1,4 @@
-// Write-ahead log (DESIGN.md section 6).
+// Write-ahead log.
 //
 // File layout:   "KWAL" u32 version=1  then frames:
 //   frame := u32 payload_len | u32 crc32c(payload) | payload          (little endian)

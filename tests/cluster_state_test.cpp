@@ -230,7 +230,7 @@ TEST(Fencing, DeadWorkerCannotHeartbeatBackWithOldEpoch) {
   EXPECT_TRUE(st.Heartbeat(w, reg.value().epoch, {}, {}, 10 * kS).reregister);
 }
 
-// The partition scenario from DESIGN.md section 5: a "dead" worker is only partitioned and
+// The partition scenario: a "dead" worker is only partitioned and
 // still running the job. After the job has moved on, the zombie must be fenced off.
 TEST(Fencing, PartitionedWorkerReturnsAndZombieJobIsKilled) {
   ClusterState st;

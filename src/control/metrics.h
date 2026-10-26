@@ -1,4 +1,4 @@
-// Prometheus text-format metrics and a minimal HTTP endpoint (DESIGN.md section 7).
+// Prometheus text-format metrics and a minimal HTTP endpoint.
 // Hand-rolled instead of prometheus-cpp: ~150 lines, no extra dependency to build in the image.
 #pragma once
 

@@ -1,4 +1,4 @@
-// Control-plane restart tests (DESIGN.md section 6 / Experiment C): the control plane is killed
+// Control-plane restart tests (Experiment C): the control plane is killed
 // mid-run and rebuilt from its WAL while worker agents keep running their jobs.
 #include <gtest/gtest.h>
 #include <unistd.h>

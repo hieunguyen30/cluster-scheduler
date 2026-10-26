@@ -1,4 +1,4 @@
-// Job, Worker and the journal Record: the data model from DESIGN.md section 3.
+// Job, Worker and the journal Record: the data model.
 #pragma once
 
 #include <set>

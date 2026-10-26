@@ -1,7 +1,7 @@
-// Worker agent (DESIGN.md section 2): registers with the control plane, heartbeats, runs
+// Worker agent: registers with the control plane, heartbeats, runs
 // assigned jobs as subprocesses and reports results.
 //
-// Protocol notes (see DECISIONS.md D15/D16):
+// Protocol notes:
 //  * Heartbeats carry the full list of running jobs and every completed-but-unacknowledged
 //    result, so every message is idempotent and a lost response costs one interval, not a job.
 //  * If the control plane is unreachable the agent keeps its jobs running and keeps retrying.

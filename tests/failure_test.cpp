@@ -1,4 +1,4 @@
-// Failure-handling tests (DESIGN.md section 5): kill workers, partition workers, fence zombies.
+// Failure-handling tests: kill workers, partition workers, fence zombies.
 // Timings: heartbeat 100 ms, SUSPECT after 500 ms, DEAD after 1000 ms (see HarnessOptions).
 #include <gtest/gtest.h>
 #include <signal.h>
@@ -106,7 +106,7 @@ TEST(Failure, SuspectWorkerGetsNoNewJobsAndRecoversWithoutReregistering) {
   EXPECT_EQ(h.cp->Snapshot().counters.jobs_lost, 0u);
 }
 
-// The scenario from DESIGN.md section 5: the control plane declares a worker dead, but the worker
+// The scenario: the control plane declares a worker dead, but the worker
 // is only partitioned and keeps running its job. The job runs twice (at-least-once). When the
 // partition heals, fencing must stop the zombie.
 TEST(Failure, PartitionedWorkerRunsJobTwiceThenIsFenced) {

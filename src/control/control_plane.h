@@ -1,5 +1,5 @@
 // The control plane: ClusterState + Scheduler behind ONE coarse mutex, a scheduler thread and a
-// failure-detector thread (DESIGN.md section 2). gRPC handlers are thin wrappers over this class.
+// failure-detector thread. gRPC handlers are thin wrappers over this class.
 //
 // Locking rule: every public method takes `mu_` for its whole body. Nothing blocks on the
 // network while holding it; the only slow thing under the lock is the journal fsync, which is

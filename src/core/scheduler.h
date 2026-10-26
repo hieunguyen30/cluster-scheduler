@@ -1,4 +1,4 @@
-// One scheduling pass: strict FIFO with head-of-line blocking (DESIGN.md section 4).
+// One scheduling pass: strict FIFO with head-of-line blocking.
 #pragma once
 
 #include <memory>

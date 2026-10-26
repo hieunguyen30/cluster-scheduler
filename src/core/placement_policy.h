@@ -1,4 +1,4 @@
-// Placement policies (DESIGN.md section 4). A policy answers one question: given a job's
+// Placement policies. A policy answers one question: given a job's
 // request and the current workers, which worker (if any) should run it?
 #pragma once
 
@@ -49,7 +49,7 @@ class FirstFitPolicy : public PlacementPolicy {
 // Among workers that fit, the one left with the least free capacity after placement.
 // Score = leftover_cpu/capacity_cpu + leftover_mem/capacity_mem, each normalised by that
 // worker's own capacity so differently sized workers are comparable. Equal CPU/memory weight
-// is a simplification (see DECISIONS.md). Ties go to the lowest worker id.
+// is a simplification. Ties go to the lowest worker id.
 class BestFitPolicy : public PlacementPolicy {
  public:
   const char* Name() const override { return "best-fit"; }

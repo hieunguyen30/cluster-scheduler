@@ -1,4 +1,4 @@
-# Shared helpers for exp_b/exp_c: start a real local cluster with the DESIGN.md defaults
+# Shared helpers for exp_b/exp_c: start a real local cluster with the default timings
 # (heartbeat 1 s, SUSPECT 3 s, DEAD 5 s). Source this file; do not execute it.
 B="${KESTREL_BIN:-$HOME/kestrel-build/plain/src}"
 now() { date +%s.%N; }
