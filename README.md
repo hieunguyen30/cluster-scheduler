@@ -7,9 +7,6 @@ rescheduled (at-least-once, with epoch/generation fencing); a write-ahead log le
 survive a crash. Ships as one container image with Kubernetes manifests, Terraform and a Cloud Build
 pipeline for GKE Autopilot ([docs/GKE.md](docs/GKE.md)).
 
-**Status.** Built and measured on one machine (WSL2, Ubuntu 24.04, GCC 13, gRPC 1.51) and exercised
-on a local `kind` cluster. **Nothing has been applied to Google Cloud**: Terraform is only validated
-offline, Cloud Build never ran, and there are no GKE measurements.
 
 ## Architecture
 
@@ -70,26 +67,6 @@ are local processes over loopback, not a cloud.
   back in 0.19 s (a 13 KB log; says nothing about large logs).
 * **WAL cost.** fsync on every append: ~255 appends/s (p50 3.8 ms) on this disk vs ~500k/s without.
   This bounds mutation throughput under the global lock.
-
-## Known limitations
-
-* Single control-plane replica (no HA); one coarse lock, with the WAL fsync inside it; throughput is
-  bounded by fsync latency.
-* WAL has no snapshots or truncation: replay time grows with history. DEAD workers are never
-  forgotten.
-* CPU/memory are logical reservations, not enforced.
-* FIFO queue with head-of-line blocking: no backfill, priorities or preemption; a job larger than any
-  worker blocks the queue.
-* At-least-once execution: jobs must be idempotent; a partitioned worker runs its jobs twice until it
-  returns, and workers do not self-fence when cut off.
-* Static failure-detection thresholds; a 10 s grace after a control-plane restart delays noticing
-  workers that died with it; a restart can burn one attempt of assigned-but-undelivered jobs.
-* Assignments and RUNNING status travel on heartbeats (up to 1 s each). Wall-clock time is used for
-  heartbeat age.
-* Simulator workload: uniform (not Poisson) arrivals, one job mix, CPU-bound; fragmentation is
-  measured for the queue head only; best-fit weights CPU and memory equally; reproducible on one
-  toolchain, not verified across toolchains.
-* Nothing measured on GKE.
 
 ## Layout
 
