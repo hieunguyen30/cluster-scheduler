@@ -214,32 +214,7 @@ disk the control plane tops out at a few hundred mutations per second: a job's l
   priorities/backfill, Raft) were not attempted.
 * "Scheduling latency" in the simulator is called **queue wait time** (instant scheduler).
 
-## Known limitations
 
-- **No HA**: single control plane replica. One coarse global lock; the WAL fsync runs under it, so
-  throughput is bounded by fsync latency (measured above) and a stalled fsync freezes heartbeat
-  handling (mitigated by detector self-monitoring, not eliminated).
-- **WAL**: no snapshots or truncation, replay reads the whole file into memory, recovery time grows
-  with history. Mid-file corruption makes it refuse to start (by design).
-- **Logical resources only**: CPU/memory are accounting numbers; nothing is enforced.
-- **FIFO with head-of-line blocking**; no backfill, priorities, preemption or affinity. A job
-  larger than any worker blocks the queue forever.
-- **At-least-once execution**: jobs must be idempotent; a worker declared dead while merely
-  partitioned runs its jobs twice until it returns. There is no self-fencing: a worker that cannot
-  reach the control plane keeps running its jobs indefinitely.
-- **Failure detection thresholds are static**, not adaptive. After a control-plane restart workers
-  get a 10 s grace before they can be declared dead, which delays noticing workers that died with
-  it. A control-plane restart can burn one attempt of jobs that were assigned but not yet delivered
-  (D39).
-- **Heartbeat dispatch latency**: assignments reach a worker, and RUNNING reaches the control plane,
-  on heartbeats (up to 1 s each with the default).
-- **DEAD workers are never forgotten**: the worker table (and WAL) grows with pod churn (D40).
-- Job exit-code failures are not retried; only worker loss triggers a retry.
-- Wall-clock time is used for heartbeat age (a clock step could cause a spurious SUSPECT/DEAD).
-- Simulator: inter-arrival gaps are uniform (less bursty than Poisson), job durations uniform per
-  class, fragmentation is head-of-queue only, best-fit weights CPU and memory equally; results are
-  reproducible on the same toolchain, not verified across toolchains.
-- Sanitizer coverage inside gRPC is limited (see above). **Nothing was measured on GKE.**
 
 ## Repository layout
 

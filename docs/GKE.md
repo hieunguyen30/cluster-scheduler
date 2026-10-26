@@ -75,7 +75,7 @@ hour while the 10 pods exist, i.e. well under a dollar for a 2-hour session, plu
 minutes for the sanitizer builds (the largest uncertain item: the ASan and TSan stages each compile
 the whole project and gRPC-heavy tests).
 
-## Why Autopilot (decision D41)
+## Why Autopilot
 
 No node pools to size, nothing billed for an empty cluster except the management fee, and managed
 Prometheus collection is on by default. The trade-off: you cannot control the node, and the
