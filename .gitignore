@@ -3,3 +3,6 @@ out/
 .cache/
 *.wal
 .tools/
+DECISIONS.md
+DESIGN.nd
+INTERVIEW_PREP.md
